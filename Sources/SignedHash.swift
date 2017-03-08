@@ -159,7 +159,7 @@ struct SignedHash {
 	}
 
 	func sign(withKey key:PrivateHardwareKey) -> SignedData? {
-        let unsignedAttributes = ["keytype": "x509", "keyid": key.certificate!.fingerprint(algorithm: .sha1).hex()]
+		let unsignedAttributes = ["keytype": "x509", "keyid": key.certificate!.fingerprint(algorithm: .sha1).hex()]
 		
 		return SignedData.sign(data: properties.toJSON(), withKey: key, unsignedAttributes: unsignedAttributes)
 	}
@@ -167,11 +167,11 @@ struct SignedHash {
 	func sign(withKey key:SecKey) -> SignedData? {
 		var unsignedAttributes:[String:Any] = ["keytype": keyid.0, "keyid": keyid.1]
 
-        if CommandLineOptions.sign {
-            unsignedAttributes["keytype"] = "x509"
-            unsignedAttributes["keyid"] = CommandLineOptions.cert!.fingerprint(algorithm: .sha1).hex()
-        }
-        
+		if CommandLineOptions.sign {
+			unsignedAttributes["keytype"] = "x509"
+			unsignedAttributes["keyid"] = CommandLineOptions.cert!.fingerprint(algorithm: .sha1).hex()
+		}
+		
 		if let salt = CommandLineOptions.signing_salt {
 			unsignedAttributes["salt"] = salt.hex()
 		}

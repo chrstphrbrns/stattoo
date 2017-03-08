@@ -21,7 +21,7 @@ class AirKeyProtocol {
 		case requestTag = 4 // request HMAC-SHA256 of data
 		case requestSignature = 5 // request ECDSA of data
 		case requestCertificate = 6 // request certificate for signing key
-        case requestSignatureVerification = 7 // request certificate for signing key
+		case requestSignatureVerification = 7 // request certificate for signing key
 	}
 	
 	public static var awaitingAuthorization:(() -> ())? = nil
@@ -57,10 +57,10 @@ class AirKeyProtocol {
 		return f(Data(bytes: [Command.requestCertificate.rawValue]).join(packetID.data()).join(data))
 	}
 
-    class func requestSignatureVerification<T>(packetID: Int, data: Data, f:(Data) -> T) -> T {
-        return f(Data(bytes: [Command.requestSignatureVerification.rawValue]).join(packetID.data()).join(data))
-    }
-    
+	class func requestSignatureVerification<T>(packetID: Int, data: Data, f:(Data) -> T) -> T {
+		return f(Data(bytes: [Command.requestSignatureVerification.rawValue]).join(packetID.data()).join(data))
+	}
+
 	class func sendDisconnect(_ f:(Data) -> ()) {
 		f(Data(bytes: [0, 1, 2, 3]))
 	}
@@ -73,43 +73,43 @@ var _airKey:AirKey? = nil
 
 class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, HardwareKey {
 	
-    var name:String? = nil
-    
-    func genericRequest(with data:Data) -> Data? {
-        var result:Data? = nil
-        let semaphore = DispatchSemaphore(value: 0)
-        
-        AirKeyProtocol.response = {
-            seq, d in
-            result = d
-            semaphore.signal()
-        }
-        
-        do {
-            try self.session.send(data, toPeers: [self.connectedPeerID!], with: .reliable)
-        } catch {
-            print(error)
-            
-            return nil
-        }
-        
-        semaphore.wait()
-        
-        return result
-    }
+	var name:String? = nil
 
-    public class PublicAirKey : PublicHardwareKey {
-        let airKey : AirKey
-        
-        public init(key:AirKey) {
-            self.airKey = key
-        }
-        
-        public func verify(signature:Data, for data: Data) -> Bool? {
-            return _airKey?.verify(signature: signature, for: data)
-        }
-    }
-    
+	func genericRequest(with data:Data) -> Data? {
+		var result:Data? = nil
+		let semaphore = DispatchSemaphore(value: 0)
+		
+		AirKeyProtocol.response = {
+			seq, d in
+			result = d
+			semaphore.signal()
+		}
+		
+		do {
+			try self.session.send(data, toPeers: [self.connectedPeerID!], with: .reliable)
+		} catch {
+			print(error)
+			
+			return nil
+		}
+		
+		semaphore.wait()
+		
+		return result
+	}
+
+	public class PublicAirKey : PublicHardwareKey {
+		let airKey : AirKey
+		
+		public init(key:AirKey) {
+			self.airKey = key
+		}
+		
+		public func verify(signature:Data, for data: Data) -> Bool? {
+			return _airKey?.verify(signature: signature, for: data)
+		}
+	}
+
 	public class PrivateAirKey : PrivateHardwareKey {
 		let airKey : AirKey
 		
@@ -119,8 +119,8 @@ class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, H
 		
 		public var certificate: SecCertificate? {
 			if let data = AirKeyProtocol.requestCertificate(packetID: 0, data: "com.chris.stattoo".data(using: .utf8)!, f: {
-                data -> Data? in
-                return airKey.genericRequest(with: data)
+				data -> Data? in
+				return airKey.genericRequest(with: data)
 			}) {
 				return SecCertificateCreateWithData(nil, data as CFData)
 			}
@@ -129,15 +129,15 @@ class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, H
 		}
 		
 		public func sign(data: Data) -> Data? {
-            if let data = AirKeyProtocol.requestSignature(packetID: 0, data: data.secureHash(.sha512), f: {
-                data -> Data? in
-                return airKey.genericRequest(with: data)
-            }) {
-                return data
-            }
-            
-            return nil
-        }
+			if let data = AirKeyProtocol.requestSignature(packetID: 0, data: data.secureHash(.sha512), f: {
+				data -> Data? in
+				return airKey.genericRequest(with: data)
+			}) {
+				return data
+			}
+			
+			return nil
+		}
 
 		public func decrypt(data: Data) -> Data? {
 			return nil
@@ -148,9 +148,9 @@ class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, H
 		return PrivateAirKey(key:self)
 	}()
 
-    lazy var publicKey : PublicAirKey = {
-        return PublicAirKey(key:self)
-    }()
+	lazy var publicKey : PublicAirKey = {
+		return PublicAirKey(key:self)
+	}()
 
 	let session:MCSession
 	let peerID:MCPeerID
@@ -172,24 +172,21 @@ class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, H
 		}
 		CFRunLoopRunInMode(CFRunLoopMode.defaultMode, 0.01, false)
 		session.disconnect()
-        self.connectedPeerID = nil
+		self.connectedPeerID = nil
 	}
 	
-	func showQRCode() {
-        info_func(message: "air key code: \(self.secret.string(using: .utf8)!.characters.map { String($0) }.joined(separator: " "))", urgent: true)
-//		print(to: &StandardError)
-//		print(String.qrcode(forData: String.random(length: 10, fromCharacterSet: CharacterSet.basicAlphanumeric).data(using: .utf8)!)!, to: &StandardError)
-//		print(to: &StandardError)
+	func showPairingCode() {
+		info_func(message: "air key code: \(self.secret.string(using: .utf8)!.characters.map { String($0) }.joined(separator: " "))", urgent: true)
 	}
 
-    public var certificate: SecCertificate? {
-        return privateKey.certificate
-    }
-    
-    public func sign(data: Data) -> Data? {
-        return privateKey.sign(data: data)
-    }
-    
+	public var certificate: SecCertificate? {
+		return privateKey.certificate
+	}
+
+	public func sign(data: Data) -> Data? {
+		return privateKey.sign(data: data)
+	}
+
 	var packetCounter = 0
 	public func hmac(data: Data) -> Data? {
 		if let connectedPeerID = connectedPeerID {
@@ -227,44 +224,44 @@ class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, H
 		return nil
 	}
 
-    public func verify(signature: Data, for data: Data) -> Bool? {
-        if let connectedPeerID = connectedPeerID {
-            var result:Bool = false
-            let semaphore = DispatchSemaphore(value: 0)
-            
-            AirKeyProtocol.response = {
-                seq, d in
-                let temp:UInt8 = d.cast()!
-                result = temp == 1
-                semaphore.signal()
-            }
-            
-            packetCounter += 1
-            if let _ = AirKeyProtocol.requestSignatureVerification(packetID: packetCounter, data: data.secureHash(.sha512).join(signature), f: {
-                data -> Bool? in
-                
-                do {
-                    try self.session.send(data, toPeers: [connectedPeerID], with: .reliable)
-                } catch {
-                    print(error)
-                    
-                    return nil
-                }
-                
-                return true
-            }) { } else {
-                return nil
-            }
-            
-            
-            semaphore.wait()
-            
-            return result
-        }
-        
-        return nil
-    }
-    
+	public func verify(signature: Data, for data: Data) -> Bool? {
+		if let connectedPeerID = connectedPeerID {
+			var result:Bool = false
+			let semaphore = DispatchSemaphore(value: 0)
+			
+			AirKeyProtocol.response = {
+				seq, d in
+				let temp:UInt8 = d.cast()!
+				result = temp == 1
+				semaphore.signal()
+			}
+			
+			packetCounter += 1
+			if let _ = AirKeyProtocol.requestSignatureVerification(packetID: packetCounter, data: data.secureHash(.sha512).join(signature), f: {
+				data -> Bool? in
+				
+				do {
+					try self.session.send(data, toPeers: [connectedPeerID], with: .reliable)
+				} catch {
+					print(error)
+					
+					return nil
+				}
+				
+				return true
+			}) { } else {
+				return nil
+			}
+			
+			
+			semaphore.wait()
+			
+			return result
+		}
+		
+		return nil
+	}
+
 	func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
 		AirKeyProtocol.interpret(command: data)
 		//self.dataHandler?(data)
@@ -321,7 +318,7 @@ class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, H
 				
 				if parts[0] == self.secret {
 					//print("received valid invitation from peer '\(peerID.displayName)'. Connecting...")
-                    self.name = parts[1].hex()
+					self.name = parts[1].hex()
 					if CommandLineOptions.remember {
 						SecKeychainAddGenericPassword(
 							nil,
@@ -364,39 +361,39 @@ class AirKey : NSObject, MCNearbyServiceAdvertiserDelegate, MCSessionDelegate, H
 }
 
 func connectToAirKey() -> AirKey? {
-    if _airKey?.connectedPeerID != nil {
-        return _airKey
-    }
-    
+	if _airKey?.connectedPeerID != nil {
+		return _airKey
+	}
+
 	_peerID = MCPeerID(displayName: "\(Host.current().name!)")
 	_session = MCSession(peer: _peerID, securityIdentity: nil, encryptionPreference: .required)
 	_advertiser = MCNearbyServiceAdvertiser(peer: _peerID, discoveryInfo: nil, serviceType: "stattoo")
 	_airKey = AirKey(session: _session, peerID: _peerID)
 	_session.delegate = _airKey
 	_advertiser.delegate = _airKey
-	
-	_airKey!.showQRCode()
+
+	_airKey!.showPairingCode()
 	let semaphre = DispatchSemaphore(value: 0)
-	
+
 	let rl = CFRunLoopGetCurrent()
-	
-    var warning = false
+
+	var warning = false
 	let workItem = DispatchWorkItem {
 		info_func(message: "waiting...")
-        warning = true
+		warning = true
 	}
-	
+
 	DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 10.0, execute: workItem)
-	
+
 	_airKey!.connectionHandler = {
 		c,p in
-	
+
 		workItem.cancel()
 		
-        if warning {
-            info_func(message: "thank you")
-        }
-        
+		if warning {
+			info_func(message: "thank you")
+		}
+		
 		semaphre.signal()
 
 		CFRunLoopStop(rl)

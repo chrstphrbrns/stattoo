@@ -31,11 +31,11 @@ func warning_func(file:SignedFile? = nil, message:String) {
 		return
 	}
 	
-    if let file = file {
-        print("stattoo: \(file.filename.trim(charactersInString: "/"))\(file.isDirectory ? "/" : ""): \("warning ".colorize(.Yellow))\(message)".colorize(.Default))
-    } else {
-        print("stattoo: \("warning ".colorize(.Yellow))\(message)".colorize(.Default))
-    }
+	if let file = file {
+		print("stattoo: \(file.filename.trim(charactersInString: "/"))\(file.isDirectory ? "/" : ""): \("warning ".colorize(.Yellow))\(message)".colorize(.Default))
+	} else {
+		print("stattoo: \("warning ".colorize(.Yellow))\(message)".colorize(.Default))
+	}
 }
 
 func error_func(file:SignedFile? = nil, message:String) {
@@ -60,7 +60,7 @@ func fatal_func(message:String) -> Never {
 // TODO: make this better
 // TODO: also create man page
 func usage() {
-	print("usage: sign [-v] [--force] [--stdinpass | --keychain[=<item name>] | --password] [--notarize[=<TSA server URL>]] [input files...]")
+	print("usage: stattoo [-v] [--force] [--stdinpass | --keychain[=<item name>] | --password] [--notarize[=<TSA server URL>]] [input files...]")
 	exit(0)
 }
 
@@ -90,16 +90,16 @@ func show_file_signature_verification_results(file:SignedFile, result:(timestamp
 		info_func(file: file, message: "valid \(file.isSigned ? "signature" : "tag") ✔︎")
 		//print("\t\("key".bold()): \(file.signedData!.unsignedAttributes!["keytype"]! as! String) \((file.signedData!.unsignedAttributes!["keyid"]! as! String).substringTo(8))")
 		if file.isSigned {
-            if result.signer.certified {
-                print("\t\("signer".bold()): \(result.signer.name) *")
-            } else {
-                // put the name in quotation marks to emphasize the dubious nature of an untrusted certificate
-                print("\t\("signer".bold()): \"\(result.signer.name)\"")
-            }
+			if result.signer.certified {
+				print("\t\("signer".bold()): \(result.signer.name) *")
+			} else {
+				// put the name in quotation marks to emphasize the dubious nature of an untrusted certificate
+				print("\t\("signer".bold()): \"\(result.signer.name)\"")
+			}
 		}
 		// TODO: should timestamps from system clock be distinguishsed from RFC3161 or AWS timestamnps? ie, should a word other
 		// than "timestamp" be used?
-        print("\t\("timestamp".bold()): \((result.timestamp.0).stringWithFormat(.LongNews))\(result.timestamp.1 != nil ? " *" : result.timestamp.2 != nil ? " ∎" : "")")
+		print("\t\("timestamp".bold()): \((result.timestamp.0).stringWithFormat(.LongNews))\(result.timestamp.1 != nil ? " *" : result.timestamp.2 != nil ? " ∎" : "")")
 		if let notarizationAuthorityName = result.timestamp.1 {
 			print("\t\("notary".bold()): \(notarizationAuthorityName) *")
 		} else if let witness = result.timestamp.2 {
@@ -117,44 +117,44 @@ func driver() {
 	}
 	
 	for filename in inputs {
-        if CommandLineOptions.hash {
-            if let data = try? Data(contentsOf: URL(fileURLWithPath: filename)).secureHash(.sha256) {
-                if let hash = Yubikey4.shared()?.oath.hmac(data: data, using: "stattoo") {
-                    info_func(message: "\(filename): \(CommandLineOptions.alpha ? hash.toBase64StringY() : hash.hex())", urgent: true)
-                }
-            } else {
-                if let hash = Yubikey4.shared()?.oath.hmac(data: filename.data(using: .utf8)!, using: "stattoo") {
-                    info_func(message: "\"\(filename.abbreviate(to: 10))\": \(CommandLineOptions.alpha ? hash.toBase64StringY().substringTo(25) : hash.hex())", urgent: true)
-                }
-            }
-            
-            continue
-        }
-        
+		if CommandLineOptions.hash {
+			if let data = try? Data(contentsOf: URL(fileURLWithPath: filename)).secureHash(.sha256) {
+				if let hash = Yubikey4.shared()?.oath.hmac(data: data, using: "stattoo") {
+					info_func(message: "\(filename): \(CommandLineOptions.alpha ? hash.toBase64StringY() : hash.hex())", urgent: true)
+				}
+			} else {
+				if let hash = Yubikey4.shared()?.oath.hmac(data: filename.data(using: .utf8)!, using: "stattoo") {
+					info_func(message: "\"\(filename.abbreviate(to: 10))\": \(CommandLineOptions.alpha ? hash.toBase64StringY().substringTo(25) : hash.hex())", urgent: true)
+				}
+			}
+			
+			continue
+		}
+		
 		// don't filter using include/exclude patterns
 		// include/exclude only applies to folder hashing
 
 		let file = SignedFile(filename: filename.trim(charactersInString: "/"))
 		
-        if CommandLineOptions.info {
-            if let keytype = file.signedData?.unsignedAttributes?["keytype"] as? String, let keyid = file.signedData?.unsignedAttributes?["keyid"] as? String {
-                switch keytype {
-                case "yubikey":
-                    info_func(file: file, message: "\(file.pastTenseVerb) with \("Yubikey".bold()) \(keyid.substringTo(8))")
-                case "keychain":
-                    info_func(file: file, message: "\(file.pastTenseVerb) with \("keychain item".bold()) \(keyid)")
-                case "x509":
-                    info_func(file: file, message: "\(file.pastTenseVerb) with \("certificate".bold()) \"\(file.certificate?.subjectName ?? "")\"")
-                default:
-                    break
-                }
-            } else {
-                info_func(file: file, message: "unsigned", urgent: false)
-            }
-            
-            continue
-        }
-        
+		if CommandLineOptions.info {
+			if let keytype = file.signedData?.unsignedAttributes?["keytype"] as? String, let keyid = file.signedData?.unsignedAttributes?["keyid"] as? String {
+				switch keytype {
+				case "yubikey":
+					info_func(file: file, message: "\(file.pastTenseVerb) with \("Yubikey".bold()) \(keyid.substringTo(8))")
+				case "keychain":
+					info_func(file: file, message: "\(file.pastTenseVerb) with \("keychain item".bold()) \(keyid)")
+				case "x509":
+					info_func(file: file, message: "\(file.pastTenseVerb) with \("certificate".bold()) \"\(file.certificate?.subjectName ?? "")\"")
+				default:
+					break
+				}
+			} else {
+				info_func(file: file, message: "unsigned", urgent: false)
+			}
+			
+			continue
+		}
+		
 		if file.isDetachedSignatureFile, CommandLineOptions.verify {
 			continue
 		}

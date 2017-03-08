@@ -10,24 +10,24 @@ import Foundation
 import Crypto
 
 extension Data {
-    func toBase64StringX() -> String {
-        return self.base64EncodedString()
-            // https://tools.ietf.org/html/rfc3986#section-2.3
-            //  "Characters that are allowed in a URI but do not have a reserved
-            //   purpose are called unreserved.  These include uppercase and lowercase
-            //   letters, decimal digits, hyphen, period, underscore, and tilde."
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: "+", with: ".")
-            .replacingOccurrences(of: "=", with: "_")
-    }
+	func toBase64StringX() -> String {
+		return self.base64EncodedString()
+			// https://tools.ietf.org/html/rfc3986#section-2.3
+			//  "Characters that are allowed in a URI but do not have a reserved
+			//   purpose are called unreserved.  These include uppercase and lowercase
+			//   letters, decimal digits, hyphen, period, underscore, and tilde."
+			.replacingOccurrences(of: "/", with: "-")
+			.replacingOccurrences(of: "+", with: ".")
+			.replacingOccurrences(of: "=", with: "_")
+	}
 
-    // ~5.94 bits of entropy per character since "a" and "b" are more probable
-    func toBase64StringY() -> String {
-        return self.base64EncodedString()
-            .replacingOccurrences(of: "/", with: "a")
-            .replacingOccurrences(of: "+", with: "b")
-            .replacingOccurrences(of: "=", with: "")
-    }
+	// ~5.94 bits of entropy per character since "a" and "b" are more probable
+	func toBase64StringY() -> String {
+		return self.base64EncodedString()
+			.replacingOccurrences(of: "/", with: "a")
+			.replacingOccurrences(of: "+", with: "b")
+			.replacingOccurrences(of: "=", with: "")
+	}
 }
 
 func readExtendedAttribute(named name:String, from filename:String) -> Data? {
@@ -74,15 +74,15 @@ class SignedFile {
 	// true if the file was properly signed with a private key (and thus has an x509 cert attached);
 	// false if the file was merely tagged (MAC'd)
 	lazy var isSigned : Bool = {
-        if self.cloudOnly {
-            if let temp = try? DetachedSignature.getFromCloud(for: self, headersOnly: true), case .headers(let headers) = temp ?? .headers([:]) {
-                return (headers["x-amz-meta-signed"] as? String) ?? "" == "yes"
-            }
-            
-            return false
-        } else {
-            return self.certificate != nil
-        }
+		if self.cloudOnly {
+			if let temp = try? DetachedSignature.getFromCloud(for: self, headersOnly: true), case .headers(let headers) = temp ?? .headers([:]) {
+				return (headers["x-amz-meta-signed"] as? String) ?? "" == "yes"
+			}
+			
+			return false
+		} else {
+			return self.certificate != nil
+		}
 	}()
 	
 	var exists : Bool {
@@ -98,9 +98,9 @@ class SignedFile {
 		return isSigned ? "signed" : "tagged"
 	}
 
-    func setKey(withKeyType keyType:String, keyID:String) {
-        let _ = retrieve_key(params: ["keytype":keyType,"keyid":keyID])
-    }
+	func setKey(withKeyType keyType:String, keyID:String) {
+		let _ = retrieve_key(params: ["keytype":keyType,"keyid":keyID])
+	}
 
 	private static var _cache:[String:Key] = [:]
 	func retrieve_key(params:[String:Any]) -> Key? {
@@ -128,7 +128,7 @@ class SignedFile {
 		switch type {
 		case "air":
 			_airKey?.disconnect()
-            info_func(file: self, message: "verify with \("air key".bold()) \(id.substringTo(8))", urgent: true)
+			info_func(file: self, message: "verify with \("air key".bold()) \(id.substringTo(8))", urgent: true)
 			if let airkey = connectToAirKey() {
 //                if self.certificate == nil {
 //                    SignedFile._cache[id] = .hardware(airkey, airkey.name ?? "air key")
@@ -136,7 +136,7 @@ class SignedFile {
 //                    SignedFile._cache[id] = .hardwarePublicKey(airkey.publicKey, airkey.name ?? "air key")
 //                }
 
-                SignedFile._cache[id] = .hardware(airkey, id)
+				SignedFile._cache[id] = .hardware(airkey, id)
 			}
 		case "x509":
 			if let key = certificate?.publicKey {
@@ -144,15 +144,15 @@ class SignedFile {
 			}
 		case "yubikey":
 			// the key id is the first 128 bits of the hmac value for the single-byte blob 0x00
-            if let key = Yubikey4.shared(), let yubikey = Yubikey(key: key) {
+			if let key = Yubikey4.shared(), let yubikey = Yubikey(key: key) {
 				if id == yubikey.id {
-                    SignedFile._cache[id] = .hardware(yubikey, CommandLineOptions.yubikey_name ?? "")
+					SignedFile._cache[id] = .hardware(yubikey, CommandLineOptions.yubikey_name ?? "")
 				} else {
 					error_func(file: self, message: "file was \(pastTenseVerb) with a different \("Yubikey".bold()) (\(id.substringTo(8)))")
 				}
 			} else {
 				error_func(file: self, message: "\("Yubikey".bold()) \(id.substringTo(8)) not found")
-                
+
 				SignedFile._cache[id] = nil
 			}
 		case "password":
@@ -178,26 +178,26 @@ class SignedFile {
 			return nil
 		}
 		
-        self.key = SignedFile._cache[id]
-        
+		self.key = SignedFile._cache[id]
+
 		return self.key
 	}
-    
-    lazy var keyType : String? = {
-        if let signed_data = self.signedData {
-            return signed_data.unsignedAttributes?["keytype"] as? String
-        }
-        
-        return nil
-    }()
 
-    lazy var keyID : String? = {
-        if let signed_data = self.signedData {
-            return signed_data.unsignedAttributes?["keyid"] as? String
-        }
-        
-        return nil
-    }()
+	lazy var keyType : String? = {
+		if let signed_data = self.signedData {
+			return signed_data.unsignedAttributes?["keytype"] as? String
+		}
+
+		return nil
+	}()
+
+	lazy var keyID : String? = {
+		if let signed_data = self.signedData {
+			return signed_data.unsignedAttributes?["keyid"] as? String
+		}
+
+		return nil
+	}()
 
 	lazy var key : Key? = {
 		if let keytype = self.keyType, let keyid = self.keyID {
@@ -223,7 +223,7 @@ class SignedFile {
 		return tags.secureHash(HASH_ALGORITHM)
 	}()
 	
-    // TODO: handle per-file tags for folder hashes
+	// TODO: handle per-file tags for folder hashes
 	lazy var hash : Data = {
 		if self.isDirectory {
 			var results = [(String, Data)]()
@@ -242,14 +242,14 @@ class SignedFile {
 					}
 				}
 
-                let url = URL(fileURLWithPath: file)
-                let tags = (url.tags() ?? []).sorted().reduce("", { s,x in "\(s),\(x)" }).data(using: .utf8)!
+				let url = URL(fileURLWithPath: file)
+				let tags = (url.tags() ?? []).sorted().reduce("", { s,x in "\(s),\(x)" }).data(using: .utf8)!
 
-                if CommandLineOptions.includeTags {
-                    results.append((file, data!.join(tags).secureHash(HASH_ALGORITHM)))
-                } else {
-                    results.append((file, data!.secureHash(HASH_ALGORITHM)))
-                }
+				if CommandLineOptions.includeTags {
+					results.append((file, data!.join(tags).secureHash(HASH_ALGORITHM)))
+				} else {
+					results.append((file, data!.secureHash(HASH_ALGORITHM)))
+				}
 			}
 			// important to process files in a deterministic order
 			results.sort { $0.0 < $1.0 }
@@ -262,14 +262,14 @@ class SignedFile {
 	}()
 	
 	// NOTE: 'hasSignedData' uses several lazy vars, so simply
- 	// reading this proeprty will kick off possibly-unexpected or undesired chain of events
+	// reading this proeprty will kick off possibly-unexpected or undesired chain of events
 	var hasSignedData : Bool {
 		return self.cloudURL != nil || signedData != nil
 	}
 	
-    // TODO: put NSUserName(), eg 'chris', in the detached signature file name
-    // this allows multiple people to sign a file and have the detached sigs in the
-    // same folder
+	// TODO: put NSUserName(), eg 'chris', in the detached signature file name
+	// this allows multiple people to sign a file and have the detached sigs in the
+	// same folder
 	lazy var detachedSignature : DetachedSignature? = {
 		if let path = CommandLineOptions.look_folders.flatMap({
 			(path:String) -> String? in
@@ -336,69 +336,69 @@ class SignedFile {
 	
 	// TODO: should 'tagshash' be included?
 	lazy var encryptionKey : SecKey? = {
-        if let key = self.key {
-            switch key {
-            case .hardware(let key, _):
-                return key.encryptionKey(forTag: self.hash)?.key
-            default:
-                return nil
-            }
-        }
-        
-        return nil
+		if let key = self.key {
+			switch key {
+			case .hardware(let key, _):
+				return key.encryptionKey(forTag: self.hash)?.key
+			default:
+				return nil
+			}
+		}
+		
+		return nil
 	}()
 
 	// TODO: should 'tagshash' be included?
 	lazy var hmacKey : Data? = {
-        if let key = self.key {
-            switch key {
-            case .hardware(let key, _):
-                return key.hmacKey(forTag: self.hash)
-            default:
-                return nil
-            }
-        }
-        
-        return nil
-	}()
-
-    lazy var cloudFolder : String? = {
-        #if DEBUG_LOCAL_CLOUD
-            return ProcessInfo().environment["STATTOO_CLOUD_FOLDER"]?.trim(charactersInString: "/")
-        #else
-            if let bucket = ProcessInfo().environment["AWS_BUCKET"] {
-                return "s3://\(bucket)"
-            }
-        #endif
-        
-        return nil
-    }()
-    
-    lazy var cloudOnly : Bool = {
-        return self.readExtendedAttribute(named: COM_CHRIS_XATTR_KEY_SIGNED_HASH) == nil &&
-                self.readExtendedAttribute(named: COM_CHRIS_XATTR_KEY_CLOUD_ID) != nil
-    }()
-    
-	lazy var cloudURL : URL? = {
-		if let url = self.readExtendedAttribute(named: COM_CHRIS_XATTR_KEY_CLOUD_ID) {
-			return URL(string: url.string(using: .utf8)!)
-        } else if let cloudFolder = self.cloudFolder, CommandLineOptions.verify, CommandLineOptions.cloud {
-            return URL(string: "\(cloudFolder)/stattoo/\(self.cloudKey)")
-        }
+		if let key = self.key {
+			switch key {
+			case .hardware(let key, _):
+				return key.hmacKey(forTag: self.hash)
+			default:
+				return nil
+			}
+		}
 		
 		return nil
 	}()
-	
+
+	lazy var cloudFolder : String? = {
+		#if DEBUG_LOCAL_CLOUD
+			return ProcessInfo().environment["STATTOO_CLOUD_FOLDER"]?.trim(charactersInString: "/")
+		#else
+			if let bucket = ProcessInfo().environment["AWS_BUCKET"] {
+				return "s3://\(bucket)"
+			}
+		#endif
+		
+		return nil
+	}()
+
+	lazy var cloudOnly : Bool = {
+		return self.readExtendedAttribute(named: COM_CHRIS_XATTR_KEY_SIGNED_HASH) == nil &&
+				self.readExtendedAttribute(named: COM_CHRIS_XATTR_KEY_CLOUD_ID) != nil
+	}()
+
+	lazy var cloudURL : URL? = {
+		if let url = self.readExtendedAttribute(named: COM_CHRIS_XATTR_KEY_CLOUD_ID) {
+			return URL(string: url.string(using: .utf8)!)
+		} else if let cloudFolder = self.cloudFolder, CommandLineOptions.verify, CommandLineOptions.cloud {
+			return URL(string: "\(cloudFolder)/stattoo/\(self.cloudKey)")
+		}
+		
+		return nil
+	}()
+
 	lazy var cloudKey : String = {
-        guard let hmacKey = self.hmacKey else {
-            fatal_func(message: "no hardware key available")
-        }
-        
+		guard let hmacKey = self.hmacKey else {
+			fatal_func(message: "no hardware key available")
+		}
+		
 		// TODO: should cloud key be random? would prevent recovery if cloud_id attribute were destroyed
 		// TODO: should 'tagshash' be included?
 		return self.hash
 			.secureHash(withKey: hmacKey, algorithm: .sha256)
-            .toBase64StringX()
+			.toBase64StringX()
 		//.replacingStringsMatchingPattern("[\\/\\+\\=]", withString: "")
 		//return String.randomWithPattern("[a-zA-Z0-9]{25}")
 		//return self.hash.secureHash(withKey: self.filePathData, algorithm: .sha256).hex()
@@ -443,12 +443,12 @@ class SignedFile {
 
 			do {
 				if FileManager.default.fileExists(atPath: "\(self.filename).sig") == false {
-                    if try newDetachedSignature.write(filename: "\(self.filename).sig") {
-                        info_func(file: self, message: "created detached signature \(self.filename).sig")
-                        return true
-                    } else {
-                        return false
-                    }
+					if try newDetachedSignature.write(filename: "\(self.filename).sig") {
+						info_func(file: self, message: "created detached signature \(self.filename).sig")
+						return true
+					} else {
+						return false
+					}
 				} else {
 					error_func(file: self, message: "file '\(self.filename).sig' already exists")
 				}
@@ -502,14 +502,14 @@ class SignedFile {
 			let detachedSignature = DetachedSignature(signedhash: signedData, certificate: certificate, timestamp: timestamp)
 			
 			if cloud {
-                guard let encryptionKey = encryptionKey else {
-                    fatal_func(message: "key not available")
-                }
-                
-                guard let hmacKey = hmacKey else {
-                    fatal_func(message: "key not available")
-                }
-                
+				guard let encryptionKey = encryptionKey else {
+					fatal_func(message: "key not available")
+				}
+				
+				guard let hmacKey = hmacKey else {
+					fatal_func(message: "key not available")
+				}
+				
 				do {
 					if let cloud_url = URL(string: cloud_path()) {
 						if let path = try detachedSignature.write(url: cloud_url, encryptionKey: encryptionKey, hmacKey: hmacKey) {
@@ -703,26 +703,26 @@ class SignedFile {
 	static var _warning = false
 	// TODO: pass in comment, notary URL, etc with property bag
 	func sign(withKey key: Key) {
-        self.key = key
-        
+		self.key = key
+		
 		let comment = CommandLineOptions.comment
 		var signedHash = SignedHash(hash: self.hash, tagshash: self.tagshash, timestamp: Date(), signer: NSFullUserName(), comment: comment)
 		if self.isDirectory {
 			signedHash.includePatterns = CommandLineOptions.include_patterns.count > 0 ? CommandLineOptions.include_patterns : nil
 			signedHash.excludePatterns = CommandLineOptions.exclude_patterns.count > 0 ? CommandLineOptions.exclude_patterns : nil
 		}
-        
+		
 		switch key {
 		case .software(let key):
 			self.signedData = signedHash.sign(withKey: key)
 		case .hardware(let key, _):
 			let workItem = DispatchWorkItem {
-                if CommandLineOptions.air {
-                    info_func(message: "touch the blue dot on your \("air key".bold()) to \(CommandLineOptions.sign ? "sign" : "tag") each file")
-                } else {
-                    info_func(message: "touch the flashing button on your \(CommandLineOptions.yubikey_name!.bold()) to sign each file")
-                    SignedFile._warning = true
-                }
+				if CommandLineOptions.air {
+					info_func(message: "touch the blue dot on your \("air key".bold()) to \(CommandLineOptions.sign ? "sign" : "tag") each file")
+				} else {
+					info_func(message: "touch the flashing button on your \(CommandLineOptions.yubikey_name!.bold()) to sign each file")
+					SignedFile._warning = true
+				}
 				SignedFile._once2 = false
 			}
 
@@ -734,23 +734,23 @@ class SignedFile {
 				DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 3, execute: workItem)
 			}
 
-            var signeddata:SignedData? = nil
-            if CommandLineOptions.sign {
-                signeddata = signedHash.sign(withKey: key.privateKey)
-            } else {
-                signeddata = signedHash.sign(withKey: key)
-            }
-            
+			var signeddata:SignedData? = nil
+			if CommandLineOptions.sign {
+				signeddata = signedHash.sign(withKey: key.privateKey)
+			} else {
+				signeddata = signedHash.sign(withKey: key)
+			}
+			
 			if let signeddata = signeddata {
 				self.signedData = signeddata
-                if SignedFile._warning {
-                    info_func(message: "thank you")
-                    SignedFile._warning = false
-                }
-            } else {
-                error_func(file: self, message: "failed to sign file \(SignedFile._warning ? "(did you touch the \("button".colorize(.Yellow).blinking())?)" : "")")
-                return
-            }
+				if SignedFile._warning {
+					info_func(message: "thank you")
+					SignedFile._warning = false
+				}
+			} else {
+				error_func(file: self, message: "failed to sign file \(SignedFile._warning ? "(did you touch the \("button".colorize(.Yellow).blinking())?)" : "")")
+				return
+			}
 		}
 
 		finishSigning()

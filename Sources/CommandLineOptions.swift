@@ -20,58 +20,58 @@ let ARGON2_MEMORY_COST:UInt32 = 50_000 // 50 MB
 let ARGON2_PARALLELISM:UInt8 = 2
 
 extension Yubikey4 {
-    public var keyID : String? {
-        if let key = Yubikey4.shared()?.oath.key(using: "stattoo") {
-            return key.sign(data: Data(bytes: [0]))!.hex().substringTo(32)
-        }
-        
-        return nil
-    }
+	public var keyID : String? {
+		if let key = Yubikey4.shared()?.oath.key(using: "stattoo") {
+			return key.sign(data: Data(bytes: [0]))!.hex().substringTo(32)
+		}
+		
+		return nil
+	}
 }
 
 enum Key {
-    case software(SecKey)
-    case hardware(HardwareKey, String)
+	case software(SecKey)
+	case hardware(HardwareKey, String)
 }
 
 public struct Yubikey : HardwareKey {
-    let key : Yubikey4
-    let pin : String
-    let id : String
-    
-    let symmetricKey:SymmetricHardwareKey
-    public let privateKey:PrivateHardwareKey
-    
-    init?(key:Yubikey4, pin:String = "") {
-        self.key = key
-        self.pin = pin
-        
-        if let key = key.oath.key(using: "stattoo", createIfMissing: true) {
-            self.symmetricKey = key
-        } else {
-            return nil
-        }
-        
-        self.privateKey = key.piv.key(using:.slot9c, pinDelegate: { return pin })
-        
-        if let id = key.keyID {
-            self.id = id
-        } else {
-            return nil
-        }
-    }
-    
-    public var certificate: SecCertificate? {
-        return privateKey.certificate
-    }
-    
-    public func hmac(data: Data) -> Data? {
-        return symmetricKey.sign(data: data)
-    }
-    
-    public func sign(data: Data) -> Data? {
-        return privateKey.sign(data: data)
-    }
+	let key : Yubikey4
+	let pin : String
+	let id : String
+
+	let symmetricKey:SymmetricHardwareKey
+	public let privateKey:PrivateHardwareKey
+
+	init?(key:Yubikey4, pin:String = "") {
+		self.key = key
+		self.pin = pin
+		
+		if let key = key.oath.key(using: "stattoo", createIfMissing: true) {
+			self.symmetricKey = key
+		} else {
+			return nil
+		}
+		
+		self.privateKey = key.piv.key(using:.slot9c, pinDelegate: { return pin })
+		
+		if let id = key.keyID {
+			self.id = id
+		} else {
+			return nil
+		}
+	}
+
+	public var certificate: SecCertificate? {
+		return privateKey.certificate
+	}
+
+	public func hmac(data: Data) -> Data? {
+		return symmetricKey.sign(data: data)
+	}
+
+	public func sign(data: Data) -> Data? {
+		return privateKey.sign(data: data)
+	}
 }
 
 func getKeyFromPassword(prompt:String? = nil, salt: Data? = nil) -> (SecKey, Data)? {
@@ -93,6 +93,7 @@ func getKeyFromPassword(prompt:String? = nil, salt: Data? = nil) -> (SecKey, Dat
 }
 
 class CommandLineOptions {
+	// http://crypto.stackexchange.com/a/6468
 	// the base encryption key is defined to be the HMAC-SHA256 hash of the single byte value 0x01
 	// with the "stattoo" credential on the Yubikey
 	public static func encryptionKey(withTag tag:Data) -> SecKey? {
@@ -102,7 +103,7 @@ class CommandLineOptions {
 			return SecKey.withData(keymaterial.secureHash(withKey: tag, algorithm: .sha256))
 		}
 		
-        return nil
+		return nil
 		// fatal_func(message: "Yubikey".bold() + " not available")
 	}
 
@@ -115,7 +116,7 @@ class CommandLineOptions {
 			return keymaterial.secureHash(withKey: tag, algorithm: .sha256)
 		}
 		
-        return nil
+		return nil
 		// fatal_func(message: "Yubikey".bold() + " not available")
 	}
 
@@ -141,16 +142,16 @@ class CommandLineOptions {
 	static var include_patterns:[String] = []
 	static var exclude_patterns:[String] = []
 	static var look_folders:[String] = ["."]
-    static var searchCloud = false
-    static var hash = false
-    static var alpha = false
-    static var set = false
+	static var searchCloud = false
+	static var hash = false
+	static var alpha = false
+	static var set = false
 
 	static var keyid:(String,String)!
 	static var cert:SecCertificate? = nil
 	static var signer:String = " with "
 	static var yubikey_name:String? = detect_yubikey() != nil ? "Yubikey" : nil
-    static var setkey:String? = nil
+	static var setkey:String? = nil
 	
 	static var signing_key:Key!
 	static var signing_salt:Data? = nil
@@ -172,9 +173,9 @@ class CommandLineOptions {
 		let exclude_name = "exclude".cString(using: .utf8)
 		let oneline_name = "oneline".cString(using: .utf8)
 		let look_name = "look".cString(using: .utf8)
-        let hash_name = "hash".cString(using: .utf8)
-        let alpha_name = "alpha".cString(using: .utf8)
-        let set_name = "set".cString(using: .utf8)
+		let hash_name = "hash".cString(using: .utf8)
+		let alpha_name = "alpha".cString(using: .utf8)
+		let set_name = "set".cString(using: .utf8)
 		// let default_name = "default".cString(using: .utf8)
 		let info_name = "info".cString(using: .utf8)
 		let remember_name = "remember".cString(using: .utf8)
@@ -301,15 +302,15 @@ class CommandLineOptions {
 				CommandLineOptions.info = true
 			} else if op == 218 {
 				CommandLineOptions.remember = true
-            } else if op == 219 {
-                CommandLineOptions.hash = true
-            } else if op == 220 {
-                CommandLineOptions.set = true
-                if optarg != nil {
-                    CommandLineOptions.setkey = String(cString: optarg)
-                }
-            } else if op == 221 {
-                CommandLineOptions.alpha = true
+			} else if op == 219 {
+				CommandLineOptions.hash = true
+			} else if op == 220 {
+				CommandLineOptions.set = true
+				if optarg != nil {
+					CommandLineOptions.setkey = String(cString: optarg)
+				}
+			} else if op == 221 {
+				CommandLineOptions.alpha = true
 			} else {
 				break
 			}
@@ -324,53 +325,53 @@ class CommandLineOptions {
 		if verify {
 			return
 		}
-        
-        if hash, Yubikey4.shared() == nil {
-            fatal_func(message: "\("Yubikey".bold()) not found")
-        }
+		
+		if hash, Yubikey4.shared() == nil {
+			fatal_func(message: "\("Yubikey".bold()) not found")
+		}
 
-        if cloud, Yubikey4.shared() == nil, air == false {
-            fatal_func(message: "cloud signatures require a hardware key")
-        }
+		if cloud, Yubikey4.shared() == nil, air == false {
+			fatal_func(message: "cloud signatures require a hardware key")
+		}
 
-        // stattoo --force --set "$(head -c 32 /dev/random | xxd -p | tr -d "\n")"
-        if set {
-            if force {
-                func getkey() -> String {
-                    let ptr = UnsafeMutablePointer<Int8>.allocate(capacity: 65)
-                    ptr.initialize(to: 0, count: 65)
-                    print("Enter key (exactly 64 hex digits, or nothing to use a random key): ", terminator: "")
-                    let temp = fgets(ptr, 65, stdin)
-                    if strnlen(temp, 64) <= 1 {
-                        return Data.random(32).hex()
-                    } else {
-                        return String(bytesNoCopy: temp!, length: 64, encoding: .utf8, freeWhenDone: false)!
-                    }
-                }
-                
-                let key = setkey ?? getkey()
-                
-                if let yubikey = Yubikey4.shared()?.oath {
-                    if let hexkey = Data.fromHex(key) {
-                        if hexkey.count == 32 {
-                            let _ = yubikey.set(credential: "stattoo", withKey: hexkey)
-                        } else {
-                            error_func(message: "key must have 64 hex digits")
-                        }
-                    } else {
-                        error_func(message: "key must be a valid 64 digit hex value")
-                    }
-                } else {
-                    fatal_func(message: "\("Yubikey".bold()) not found")
-                }
-            } else {
-                error_func(message: "must use --force with --set")
-                warning_func(message: "setting a new key will invalidate all tags and hashes made with the current key")
-            }
-            
-            exit(0)
-        }
-        
+		// stattoo --force --set "$(head -c 32 /dev/random | xxd -p | tr -d "\n")"
+		if set {
+			if force {
+				func getkey() -> String {
+					let ptr = UnsafeMutablePointer<Int8>.allocate(capacity: 65)
+					ptr.initialize(to: 0, count: 65)
+					print("Enter key (exactly 64 hex digits, or nothing to use a random key): ", terminator: "")
+					let temp = fgets(ptr, 65, stdin)
+					if strnlen(temp, 64) <= 1 {
+						return Data.random(32).hex()
+					} else {
+						return String(bytesNoCopy: temp!, length: 64, encoding: .utf8, freeWhenDone: false)!
+					}
+				}
+				
+				let key = setkey ?? getkey()
+				
+				if let yubikey = Yubikey4.shared()?.oath {
+					if let hexkey = Data.fromHex(key) {
+						if hexkey.count == 32 {
+							let _ = yubikey.set(credential: "stattoo", withKey: hexkey)
+						} else {
+							error_func(message: "key must have 64 hex digits")
+						}
+					} else {
+						error_func(message: "key must be a valid 64 digit hex value")
+					}
+				} else {
+					fatal_func(message: "\("Yubikey".bold()) not found")
+				}
+			} else {
+				error_func(message: "must use --force with --set")
+				warning_func(message: "setting a new key will invalidate all tags and hashes made with the current key")
+			}
+			
+			exit(0)
+		}
+		
 		if defaults {
 			var args:[String] = []
 			
@@ -458,16 +459,16 @@ class CommandLineOptions {
 			info_func(message: "connect with your " + "air key".bold())
 			if let airKey = connectToAirKey() {
 				// TODO: make this use the actual air key certificate
-                if sign {
-                    if let certificate = airKey.privateKey.certificate {
-                        CommandLineOptions.signer += "air key ".bold() + (airKey.name ?? "").substringTo(8)
-                        CommandLineOptions.signing_key = .hardware(airKey, "air")
-                        CommandLineOptions.cert = certificate
-                        CommandLineOptions.keyid = ("air",  airKey.name!)
-                        // CommandLineOptions.keyid = ("air", airKey.name!)
-                    } else {
-                        fatal_func(message: "failed to retrieve \("air key".bold()) certificate")
-                    }
+				if sign {
+					if let certificate = airKey.privateKey.certificate {
+						CommandLineOptions.signer += "air key ".bold() + (airKey.name ?? "").substringTo(8)
+						CommandLineOptions.signing_key = .hardware(airKey, "air")
+						CommandLineOptions.cert = certificate
+						CommandLineOptions.keyid = ("air",  airKey.name!)
+						// CommandLineOptions.keyid = ("air", airKey.name!)
+					} else {
+						fatal_func(message: "failed to retrieve \("air key".bold()) certificate")
+					}
 				} else {
 					CommandLineOptions.signer += "air key ".bold() + (airKey.name ?? "").substringTo(8)
 					CommandLineOptions.signing_key = .hardware(airKey, "air")
@@ -500,12 +501,12 @@ class CommandLineOptions {
 				}
 			}
 
-            if let yk = Yubikey4.shared(), let pin = pin, let key = Yubikey(key: yk, pin: pin), let certificate = key.certificate {
-                CommandLineOptions.signing_key = .hardware(key, yubikey_name)
-                CommandLineOptions.keyid = ("yubikey", key.id)
-                
-                CommandLineOptions.signer += yubikey_name.bold() + " \(yubikey_id!.substringTo(8))"
-                CommandLineOptions.cert = certificate
+			if let yk = Yubikey4.shared(), let pin = pin, let key = Yubikey(key: yk, pin: pin), let certificate = key.certificate {
+				CommandLineOptions.signing_key = .hardware(key, yubikey_name)
+				CommandLineOptions.keyid = ("yubikey", key.id)
+				
+				CommandLineOptions.signer += yubikey_name.bold() + " \(yubikey_id!.substringTo(8))"
+				CommandLineOptions.cert = certificate
 			} else {
 				fatal_func(message: "sorry")
 			}
